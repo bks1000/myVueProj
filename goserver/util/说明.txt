@@ -1,0 +1,83 @@
+通过使用github.com/ggwhite/go-hessian 【golang hessian proxy】，发起hessian请求，调用ava服务执行。
+但是，这个包，解析返回的hessian数据存在问题。
+
+将github.com/xjing521 包中的解析方法，拷贝到go-hessian文件中，在proxy.go中，添加新方法，对返回数据进行解析。
+// Invoke input method name and arguments, it will send request to server, and parse response to interface
+func (c *Proxy) Invoke2(m string, args ...interface{}) (interface{}, error) {
+
+	c.serializer.Flush()
+
+	if err := c.serializer.Call(m, args...); err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, c.conf.URL, c.serializer.Reader())
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/x-hessian")
+	req.Header.Set("Accept-Encoding", "gzip")
+	//req.Header.Set("Accept-Encoding", "identity")
+	resp, err := c.client.Do(req)
+	log.Println("---------------Called------------------")
+	log.Println("---------------", resp.ContentLength) //-1表示是压缩数据
+	log.Println(resp.Header)
+	log.Println("数据是否已经解压缩：", resp.Uncompressed) //参考http://localhost:6060/pkg/net/http/ 。压缩的内容resp.ContentLength=-1
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Println("status error", resp.StatusCode)
+	}
+	log.Println("---------------Body------------------")
+	c.deserializer.Reset(resp.Body)
+	log.Println("---------------Reset------------------")
+
+	if resp.Close {
+		log.Println("----------------closed-------------")
+	}
+
+	h := NewHessian(resp.Body)	//********************************************主要是这个****************************
+	ans, err := h.Parse()		//********************************************主要是这个****************************
+	if err != nil {
+		return nil, err
+	}
+	log.Println("---------------ans------------------")
+	log.Println(ans)
+	return ans, nil
+}
+
+
+
+
+
+
+
+
+
+
+parse.go	要修改一下
+case 'M': //map
+		h.read_type() //TODO 类型怎么用?
+		var map_chunks = make(map[string]Any)
+		for h.peek_byte() != 'z' {
+			_kv, _ke := h.Parse()
+			if _ke != nil {
+				map_chunks = nil
+				err = _ke
+				return
+			}
+			_vv, _ve := h.Parse()
+			if _ve != nil {
+				map_chunks = nil
+				err = _ve
+				return
+			}
+			map_chunks[(_kv).(string)] = _vv
+		}
+		h.read_byte()
+		v = map_chunks
+		h.append_refs(&map_chunks)
