@@ -23,8 +23,8 @@ type JavaController struct {
 // @Success 200 {object} models.User
 // @router / [get]
 func (u *JavaController) GetAll() {
-	//var addr string = "http://172.18.5.171:8090/HASDXMK/remoting/xmkBmpmanagementService"
-	var addr string = "http://192.168.7.102:8190/HebFASPSD/remoting/authorizationWithApplicationService"
+	var addr string = "http://localhost:8090/HASDXMK/remoting/xmkBmpmanagementService"
+	//var addr string = "http://192.168.7.102:8190/HebFASPSD/remoting/authorizationWithApplicationService"
 	proxy, err := hessian.NewProxy(&hessian.ProxyConfig{
 		Version: hessian.V1,
 		URL:     addr,
@@ -34,8 +34,8 @@ func (u *JavaController) GetAll() {
 	}
 	//public List<Map<String, Object>> getCtAgency(String schema, String admdiv, String bdgyear)
 	log.Println("-------------------------invoke-------------------------")
-	//data, err := proxy.Invoke2("getCtAgency", "FASPSD130000000", "130000000", "2020", 1) //后台调用成功，反序列化时，这个库出现问题。//分多个包发来的，就不行了，回头再试试。
-	data, err := proxy.Invoke2("getApplications", "FASPSD130000000", "") //Response Head中含有Transfer-Encoding: chunked 的，可以。
+	data, err := proxy.Invoke2("getCtAgency", "FASPSD130000000", "130000000", "2020", 1) //后台调用成功，反序列化时，这个库出现问题。
+	//data, err := proxy.Invoke2("getApplications", "FASPSD130000000", "")
 	if err != nil {
 		panic(err)
 	}
@@ -94,7 +94,7 @@ func (u *JavaController) Get() {
 		}
 		//public List<Map<String, Object>> getCtAgency(String schema, String admdiv, String bdgyear)
 		log.Println("-------------------------invoke-------------------------")
-		data, err := proxy.Invoke2("getCtAgency", "FASPSD130000000", "130000000", "2020", 1) //后台调用成功，反序列化时，这个库出现问题。//分多个包发来的，就不行了，回头再试试。
+		data, err := proxy.Invoke2("getCtAgency", "FASPSD130000000", "130000000", "2020", 1) //后台调用成功，反序列化时，这个库出现问题。
 		if err != nil {
 			panic(err)
 		}
